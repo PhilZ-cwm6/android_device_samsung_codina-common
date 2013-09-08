@@ -50,7 +50,7 @@ PRODUCT_COPY_FILES += \
 
 # RIL
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/etc/cspsa.conf:system/etc/cspsa.conf
-# Vold
-PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/etc/vold.fstab:system/etc/vold.fstab
+    $(LOCAL_PATH)/configs/etc/cspsa.conf:system/etc/cspsa.conf \
+    $(LOCAL_PATH)/configs/etc/AT/manuf_id.cfg:system/etc/AT/manuf_id.cfg \
+    $(LOCAL_PATH)/configs/etc/AT/model_id.cfg:system/etc/AT/model_id.cfg \
+    $(LOCAL_PATH)/configs/etc/AT/system_id.cfg:system/etc/AT/system_id.cfg
