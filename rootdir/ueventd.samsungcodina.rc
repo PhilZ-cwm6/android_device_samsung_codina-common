@@ -49,4 +49,10 @@
 # Trusted Eexecution Engine
 /dev/tee                  0660   root       system
 
+# RFKILL control device
+/dev/rfkill 0644 system system
+
+# MTP
+/dev/mtp_usb              0660   root       mtp
+
 /dev/block/mmcblk0p19     0660   system     system

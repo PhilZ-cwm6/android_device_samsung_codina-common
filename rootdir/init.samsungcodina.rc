@@ -1,27 +1,36 @@
-# NOTE: This file contains ST-Ericsson related additions/modifications/deletions to init.rc
-#       Commented out lines are kept for reference.
-
-import /init.${ro.hardware}.usb.rc
-import /init.bt.rc
-import /init.carrier.rc
+import /init.samsungcodina.usb.rc
 
 on early-init
-    
-    # Set init and its forked children's oom_adj.
-    write /proc/1/oom_score_adj -16
+    export EXTERNAL_STORAGE /storage/sdcard0
+    export SECONDARY_STORAGE /storage/sdcard1
+    mkdir /storage 0775 system system
+    mkdir /storage/sdcard0 0775 system system
+    mkdir /storage/sdcard1 0775 system system
+    mkdir /storage/usbdisk 0775 system system
+
+    mkdir /efs 0771 radio system
+    mkdir /preload 0771 system system
+    mkdir /modemfs 0771 system system
+    mkdir /mnt 0755 root system
+    mkdir /mnt/.lfs 0755 root root
+
+    # for backwards compatibility
+    symlink /storage/sdcard0 /sdcard
+    symlink /storage/sdcard0 /mnt/sdcard
+    symlink /storage/sdcard1 /extSdCard
+    symlink /storage/sdcard1 /mnt/extSdCard
+    symlink /storage/usbdisk /usbdisk0
+    symlink /storage/usbdisk /mnt/usbdisk0
 
 on init
 
     # setup the global environment
     export PATH /system/sbin:/system/bin:/system/xbin:/sbin:/bin:/vendor/bin
-    export LD_LIBRARY_PATH /system/lib:/lib:/usr/lib:/system/lib/ste_omxcomponents/:/vendor/lib
+    export LD_LIBRARY_PATH /system/lib:/lib:/usr/lib:/system/lib/ste_omxcomponents:/vendor/lib
     export OMX_STE_ENS_COMPONENTS_DIR /system/lib/ste_omxcomponents/
-    export OMX_BELLAGIO_LOADER_REGISTRY /system/omxloaders
+    export OMX_BELLAGIO_LOADER_REGISTRY /system/etc/omxloaders
+    export OMX_STE_CSCALL_COMPONENTS_DIR /system/lib/ste_omxcomponents/
 
-    mkdir /system 0775 system system
-    mkdir /modemfs 0771 system system
-    mkdir /efs 0775 radio system
-    mkdir /preload 0771 system system
     # Shared memory file system
     mkdir /dev/shm 0700 root system
     mount tmpfs tmpfs /dev/shm mode=0755,gid=1000
@@ -32,31 +41,23 @@ on init
     # create /tmp directory needed by psccd and CSPSA
     mkdir /tmp
 
-    # J4FS(lfs) mount points.
-    mkdir /mnt/.lfs 0755 root root
-
     # mount debugfs in order for Audio ADM component to retrieve debug information
     mkdir /debug
     mount debugfs none /debug
 
+    # Prevents permission denied error for telephony
+    chmod 0644 /proc/cmdline
 
 on fs
 
     mount_all /fstab.samsungcodina
-    setprop ro.crypto.fuse_sdcard true
 
     # Start CSPSA before synchronously running the factory reset utility that
     # checks the factory reset triggers in sysfs and CSPSA and then formats
     # the block device belonging to /data.
     start cspsa
-    exec /system/bin/logwrapper /system/bin/factoryreset -f /sys/socinfo/reset_reason -r factory-reset -c CSPSA0 -p 0xfffffffc:31 /dev/block/mmcblk0p5
 
 on post-fs
-
-    # once everything is setup, no need to modify /
-    chown system system /system
-    chmod 0775 /system
-
     chown radio radio /modemfs
     chmod 0771 /modemfs
     chown radio radio /modemfs/CONF
@@ -99,7 +100,7 @@ on post-fs
     chmod 0666 /dev/mmc328x
     chmod 0666 /dev/bma222
     chmod 0666 /dev/ecompass_ctrl
-    
+
     # change the permission sensor chips
     chown root system /dev/alps_io
     chmod 0660 /dev/alps_io
@@ -126,8 +127,6 @@ on post-fs
     chmod 0666 /dev/mpu60x0_gyro
     chmod 0666 /dev/mpu60x0_accel
     chmod 0666 /dev/mmc3280
-
-    # change the permission sensor chips
     chown root system /dev/alps_io
     chmod 0660 /dev/alps_io
     chown root system /dev/alps_compass_io
@@ -271,24 +270,22 @@ on post-fs
     chmod 0660 /debug/prcmu/ape_opp
     chmod 0660 /debug/prcmu/ddr_opp
 
+    symlink /dev/block/mmcblk0p1 /dev/block/param
+
     # Install Kernel Module
-    insmod /lib/modules/j4fs.ko
-    # We need to decide j4fs's partition number(mmcblk0pX)
-    # loke4
-    mount j4fs /dev/block/mmcblk0p19 /mnt/.lfs wait
-    # loke3
-    #mount j4fs /dev/block/mmcblk0p1 /mnt/.lfs wait
+    insmod /system/lib/modules/j4fs.ko
+    mount j4fs /dev/block/mmcblk0p1 /mnt/.lfs wait
 
-    insmod /lib/modules/param.ko
-    insmod /lib/modules/bthid.ko
-
-
-    # AB8500 Fuelgauge initialization using PARAM capacity
+    insmod /system/lib/modules/param.ko
     write /sys/class/power_supply/sec-fuelgauge/reinit_cap 1
+    insmod /system/lib/modules/bthid.ko
 
 on post-fs-data
 
+
     # create basic filesystem structure
+    mkdir /data/media 0775 media_rw media_rw
+    chown media_rw media_rw /data/media
     mkdir /data/misc/psdata
     mkdir /data/misc/bluetoothd 0770 bluetooth bluetooth
     mkdir /data/misc/bluetooth 0770 system system
@@ -300,12 +297,6 @@ on post-fs-data
     mkdir /data/misc/wifi 0770 wifi system
     chmod 0770 /data/misc/wifi
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
-    chown root root /lib/modules/dhd.ko
-
-    # give system access to ril_config
-    copy -u /system/etc/ril_config /data/misc/ril_config
-    chmod 0660 /data/misc/ril_config
-    chown root radio /data/misc/ril_config
 
     # Create directory for STE OMX debug logs
     mkdir /data/ste-debug 0775 system system
@@ -341,9 +332,6 @@ on post-fs-data
     # Change permissions for modem_log_relay config file
     chmod 666 /modemfs/trace_auto.conf
 
-    # Set permission rights for ping
-    chmod 4755 /system/bin/ping
-
     # If there is no fs-post-data action in the init.<device>.rc file, you
     # must uncomment this line, otherwise encrypted filesystems
     # won't work.
@@ -351,9 +339,6 @@ on post-fs-data
     setprop vold.post_fs_data_done 1
 
 on early-boot
-
-    # Enable line below if you want console in charging mode
-#   start console
 
     # Launch core services in case charging mode is entered
     start watchdog-kicker
@@ -366,6 +351,9 @@ on early-boot
     write /sys/module/cm/parameters/enable_auto_pm 1
 
 on boot
+
+    # debugfs
+    mount debugfs /sys/kernel/debug /sys/kernel/debug
 
     # Set timeout value for rmnet stats.
     write /sys/devices/virtual/net/rmnet0/timeout_suspend 5000000
@@ -408,27 +396,29 @@ on boot
     chown bluetooth bluetooth /dev/ttyAMA0
     chmod 0660 /dev/ttyAMA0
 
+    # permissions for FMRadio of Broadcom
+    chmod 0777 /system/bin/btld
+
     # power up/down interface
     chmod 0660 /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/state
     chown bluetooth bluetooth /sys/class/rfkill/rfkill0/type
+
+    # for bluetooth. change access rights as btld runs as bluetooth user
+    chown root bluetooth /sys/class/rfkill/rfkill0
+    chown root bluetooth /sys/class/rfkill/rfkill0/claim	
+    chown root bluetooth /sys/class/rfkill/rfkill0/soft
+    chmod 0664 /sys/class/rfkill/rfkill0/claim
+    chmod 0664 /sys/class/rfkill/rfkill0/soft
+    setprop service.brcm.bt.pbap_mode btld
+    chown bluetooth /dev/ttyS2
+    chmod 0660 /dev/ttyS2
 
     # bluetooth MAC address programming
     setprop ro.bt.bdaddr_path "/efs/bluetooth/bt_addr"
     chown bluetooth bluetooth ro.bt.bdaddr_path
     chown bluetooth bluetooth /system/etc/bt_addr
 
-    # permission for GPS library
-    # chown root system /dev/ttyAMA1
-    # chmod 0660 dev/ttyAMA1
-    # chown root system sys/class/sec/gps/GPS_ON_OFF/value
-    # chmod 0664 sys/class/sec/gps/GPS_ON_OFF/value
-    # chown root system sys/class/sec/gps/GPS_nRST/value
-    # chmod 0664 sys/class/sec/gps/GPS_nRST/value
-    # GPS
-    # create data/gps for GPS demon
-    # mkdir /data/gps 771 system system
-    # chown system system /data/gps
 
     # GPS
     chown root system /dev/ttyAMA1
@@ -448,118 +438,51 @@ on boot
     chown system system /sys/class/backlight/panel/brightness
     chown system radio /sys/class/lcd/panel/lcd_power
     chown system radio /sys/class/lcd/panel/lcd_type
-    chown system media_rw /sys/class/lcd/panel/power_reduce    
+    chown system media_rw /sys/class/lcd/panel/power_reduce
 
     # camera factory
     chown system system /sys/class/sec/sec_cam/camtype
     chown system system /sys/class/sec/flash/enable
-    chown system system /sys/class/camera/rear/rear_flash    
+    chown system system /sys/class/camera/rear/rear_flash
     chown system system /sys/class/camera/front/front_camtype
     chown system system /sys/class/camera/rear/rear_camtype
     chown system system /sys/class/camera/flash/rear_flash
 
-    # camera debug 
+    # camera debug
     setprop persist.debug.extcamera.level 777
     setprop persist.debug.mmiocamera.level 777
     setprop debug.libcamera.trace 666
 
     # Battery
     chown system system /sys/class/power_supply/battery/batt_vol_adc_cal
-    chown system radio /sys/class/power_supply/battery/fg_reset_soc
-    chown system radio /sys/class/power_supply/battery/batt_reset_soc
-    chown system radio /sys/class/power_supply/battery/factory_mode
-    chown system radio /sys/class/power_supply/battery/update
-    chown system radio /sys/class/power_supply/battery/2g_call
-    chown system radio /sys/class/power_supply/battery/3g_call
-    chown system radio /sys/class/power_supply/battery/data_call
-    chown system radio /sys/class/power_supply/battery/wifi
-    chown system radio /sys/class/power_supply/battery/lte
-    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/video
-    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/music
-    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/browser
-    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/hotspot
-    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/camera
+    chown radio system /sys/class/power_supply/battery/fg_reset_soc
 
     # Modem
     class_start modem
     class_start default
 
-service console /system/bin/sh
-    class core
-    console
-    disabled
-#    user shell
-#    group log
-
-service netd /system/bin/netd
-    class main
-    socket netd stream 0660 root system dbus_access
-    socket dnsproxyd stream 0660 root inet
-    socket mdns stream 0660 root system
-
-service media /system/bin/logwrapper /system/bin/mediaserver
-    class main
-    user media
-    group system audio camera inet net_bt net_bt_admin net_bw_acct drmrpc sdcard_rw sdcard_r
-    ioprio rt 4
-
-service powersnd /system/bin/samsungpowersoundplay
-    class main
-    user media
-    group system
-    oneshot
-
-service dbus /system/bin/logwrapper /system/bin/dbus-daemon --system --nofork
-    class main
-    socket dbus stream 660 bluetooth bluetooth
-    socket dbus_ste stream 660 bluetooth dbus_access
-    user bluetooth
-    group bluetooth net_bt_admin dbus_access
-
-service bluetoothd /system/bin/logwrapper /system/bin/bluetoothd -n -d
-    class main
-    socket bluetooth stream 660 bluetooth bluetooth
-    socket dbus_bluetooth stream 660 bluetooth bluetooth
-    # init.rc does not yet support applying capabilities, so run as root and
-    # let bluetoothd drop uid to bluetooth with the right linux capabilities
-    group bluetooth net_bt_admin misc
-    disabled
-
-service flash_recovery /system/bin/logwrapper /system/etc/install-recovery.sh
-    class main
-    oneshot
+# create virtual SD card at /mnt/sdcard, based on the /data/media directory
+# daemon will drop to user/group system/media_rw after initializing
+# underlying files in /data/media wil be created with user and group media_rw (1023)
+service sdcard /system/bin/sdcard /data/media /mnt/shell/emulated 1023 1023
+    class late_start
 
 # Crash Safe Parameter Storage Area, serving production parameter requests from clients.
 # Configuration is read from file "/etc/cspsa.conf" and each found area spawns a CSPSA server
 # process.
-service cspsa /system/bin/logwrapper /system/bin/cspsa-server
+service cspsa /system/bin/cspsa-server
     class parameter_storage
     user root
-    oneshot
-
-# init shrm net device required for Phonet communication with Modem
-#service shrm-netdev /system/bin/ifconfig svnet0 up
-#    class modem-u8500
-#    oneshot
-
-# init Phonet net device required for Phonet communication with Modem
-service phonet-netdev /system/bin/ifconfig upnlink0 up
-    class main
     oneshot
 
 # Copy RF trim data from CSPSA, and start the Modem Storage Agent (MSA) service
 service modem /system/bin/sh /system/etc/ste_modem.sh
     class modem-u8500
-    user root
-#    user radio
-#    group radio
+    user radio
+    group radio
 
 # Modem-supervisor
-#service modem-supervisor /system/bin/modem-supervisor -r -f /dev/dbx500_mloader_fw -i /sys/devices/platform/ab8505-i2c.0/chip_id,/sys/devices/platform/ab8500-i2c.0/chip_id -c monitor
 service modem-supervisor /system/bin/modem-supervisor -f /dev/dbx500_mloader_fw -i /sys/devices/platform/ab8505-i2c.0/chip_id,/sys/devices/platform/ab8500-i2c.0/chip_id -c monitor
-#service modem-supervisor /system/bin/modem-supervisor -r -f /dev/dbx500_mloader_fw -i /sys/devices/platform/ab8505-i2c.0/chip_id,/sys/devices/platform/ab8500-i2c.0/chip_id -m /modemfs/BINARIES/ -c monitor
-#service modem-supervisor /system/bin/modem-supervisor -r -f /dev/dbx500_mloader_fw -i /sys/devices/platform/ab8505-i2c.0/chip_id,/sys/devices/platform/ab8500-i2c.0/chip_id -b /dev/block/mmcblk0p15 -M /dev/block/mmcblk0p16 -c monitor
-#service modem-supervisor /system/bin/modem-supervisor -f /dev/dbx500_mloader_fw -i /sys/devices/platform/ab8505-i2c.0/chip_id,/sys/devices/platform/ab8500-i2c.0/chip_id -b /dev/block/mmcblk0p15 -M /dev/block/mmcblk0p16 -c monitor
     class modem-u8500
     user root
 
@@ -573,84 +496,15 @@ service modem_log_relay /system/bin/modem_log_relay --ctrl_port=2001 --data_port
     class modem
     user root
 
-service admsrv /system/bin/logwrapper /system/bin/admsrv
+service admsrv /system/bin/admsrv
     class main
-    user audio
+    user root
     group system audio inet net_bt net_bt_admin net_raw shell log
     ioprio rt 4
     capability NET_ADMIN NET_RAW SYS_NICE
 
-service stedump /system/bin/logwrapper /system/bin/stedump
-    class main
-    user root
-
-#service hdmid /system/bin/hdmid
-#    class main
-#    socket hdmid stream 0660 root system graphics
-#    oneshot
-
-# start GPS daemon
-#service gpsd /system/bin/gpsd -c /system/etc/gps.xml
-#    class main
-#    socket gps seqpacket 0660 gps system
-#    user gps
-#    group system inet sdcard_rw
-
-#service thermald /system/bin/thermald
-#    class main
-#    user root
-#    group root dbus_access
-
 on property:init.svc.wpa_supplicant=stopped
     stop dhcpcd
-
-on property:init.svc.dhcpcd=stopped
-    stop dhcpcd
-
-# C&N service daemon
-#service cn_server /system/bin/cn_server
-#    class modem-core
-#    user root
-#    group radio misc
-
-# PS connection control
-#service init_stepscc /system/bin/sh /data/misc/psdata/stepscc_init.sh
-#    class main
-#    oneshot
-
-#service psccd /system/bin/psccd -f -c /data/misc/psdata/stepscc_conf
-#    class modem
-#    user root
-#    group radio inet
-
-# PS routing control
-#service init_sterc /system/bin/sh /data/misc/psdata/sterc_init.sh
-#    class main
-#    oneshot
-
-#service stercd /system/bin/stercd -d 9 -r /data/misc/psdata/sterc_script_connect -s /data/misc/psdata/sterc_script_disconnect -c /data/misc/psdata/sterc_conf
-#    class modem
-#    user root
-#    group radio
-#    oneshot
-
-# SIM daemon
-#service simd /system/bin/simd
-#    class modem-core
-#    user root
-#    group radio
-
-# SIMPB daemon
-#service simpbd /system/bin/simpbd
-#    class modem-core
-#    user root
-#    group radio
-
-# SMS Server control
-#service sms_server /system/bin/sms_server
-#    class modem
-#    user root
-#    group radio
 
 # AT daemon
 service atd /system/bin/at_core -mode normal -serial ttyAMA2
@@ -658,64 +512,28 @@ service atd /system/bin/at_core -mode normal -serial ttyAMA2
     user root
     group radio audio
 
-# TA Loader
-service ta_load /system/bin/ta_loader
-    user root
-    group radio
-
 # AT Distributor for factory test
 service at_distributor /system/bin/at_distributor
     user root
     group radio log
 
-# Modem Access daemon
-#service mad /system/bin/ste_mad
-#    class modem
-#    user radio
-#    group radio dbus_access misc
-
-# Avahi Autoip daemon
-#service avahi-autoipd /system/bin/avahi-autoipd usb0 -D
-#    class main
-#    user root
-
-# Avahi daemon
-#service avahi-daemon /system/bin/avahi-daemon
-#    class main
-#    user root
-
-# Avahi-publish
-#service avahi-publish /system/bin/avahi-publish -s READY _mobile._tcp 5353
-#    class main
-#    user root
-
-service watchdog-kicker /system/xbin/watchdog-kicker -d /dev/watchdog -t 120
-    class main
-    oneshot
-
-service battery_params /system/xbin/battery_params
-    class main
-    oneshot
-
 service usbid_init /system/bin/usbid_init.sh
     class main
     oneshot
 
-# RTC Calibration daemon
-#service rtc_calibration /system/bin/rtc_calibration
-#    user root
+# We must to setup two different services for p2p and wpa supplicants on bcm4334
+service wpa_supplicant /system/bin/wpa_supplicant -Dnl80211 -iwlan0 -puse_p2p_group_interface=1 -e/data/misc/wifi/entropy.bin
+    class main
+    socket wpa_wlan0 dgram 660 wifi wifi
+    disabled
+    oneshot
 
-service wpa_supplicant /system/bin/wpa_supplicant \
-    	-Dnl80211 -iwlan0 -puse_p2p_group_interface=1 -e/data/misc/wifi/entropy.bin \
-	-c/data/misc/wifi/wpa_supplicant.conf
-#   we will start as root and wpa_supplicant will switch to user wifi
-#   after setting up the capabilities required for WEXT
-#   user wifi
-#   group wifi inet keystore
-	class main
-	socket wpa_wlan0 dgram 660 wifi wifi
-	disabled
-	oneshot
+# We must to setup two different services for p2p and wpa supplicants on bcm4334
+service p2p_supplicant /system/bin/wpa_supplicant -iwlan0 -Dnl80211 -c/data/misc/wifi/wpa_supplicant.conf -N -ip2p0 -Dnl80211 -c/data/misc/wifi/p2p_supplicant.conf -e/data/misc/wifi/entropy.bin -puse_p2p_group_interface=1
+    class main
+    socket wpa_wlan0 dgram 660 wifi wifi
+    disabled
+    oneshot
 
 service dhcpcd_wlan0 /system/bin/dhcpcd -ABKL
 	class main
