@@ -28,8 +28,8 @@ PRODUCT_COPY_FILES += \
 # Ramdisk
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/fstab.samsungcodina:root/fstab.samsungcodina \
-    $(LOCAL_PATH)/rootdir/system/lib/modules/j4fs.ko:root/lib/modules/j4fs.ko \
-    $(LOCAL_PATH)/rootdir/system/lib/modules/param.ko:root/lib/modules/param.ko \
+    $(LOCAL_PATH)/rootdir/lib/modules/j4fs.ko:system/lib/modules/j4fs.ko \
+    $(LOCAL_PATH)/rootdir/lib/modules/param.ko:system/lib/modules/param.ko \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.rc:root/init.samsungcodina.rc \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.usb.rc:root/init.samsungcodina.usb.rc \
     $(LOCAL_PATH)/rootdir/ueventd.samsungcodina.rc:root/ueventd.samsungcodina.rc
