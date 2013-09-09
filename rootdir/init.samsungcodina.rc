@@ -24,12 +24,8 @@ on early-init
 
 on init
 
-    # setup the global environment
-    export PATH /system/sbin:/system/bin:/system/xbin:/sbin:/bin:/vendor/bin
-    export LD_LIBRARY_PATH /system/lib:/lib:/usr/lib:/system/lib/ste_omxcomponents:/vendor/lib
     export OMX_STE_ENS_COMPONENTS_DIR /system/lib/ste_omxcomponents/
     export OMX_BELLAGIO_LOADER_REGISTRY /system/etc/omxloaders
-    export OMX_STE_CSCALL_COMPONENTS_DIR /system/lib/ste_omxcomponents/
 
     # Shared memory file system
     mkdir /dev/shm 0700 root system
@@ -270,7 +266,7 @@ on post-fs
     chmod 0660 /debug/prcmu/ape_opp
     chmod 0660 /debug/prcmu/ddr_opp
 
-    symlink /dev/block/mmcblk0p1 /dev/block/param
+    symlink /dev/block/mmcblk0p19 /dev/block/param
 
     # Install Kernel Module
     insmod /system/lib/modules/j4fs.ko
@@ -281,7 +277,6 @@ on post-fs
     insmod /system/lib/modules/bthid.ko
 
 on post-fs-data
-
 
     # create basic filesystem structure
     mkdir /data/media 0775 media_rw media_rw
@@ -300,29 +295,6 @@ on post-fs-data
 
     # Create directory for STE OMX debug logs
     mkdir /data/ste-debug 0775 system system
-
-    # give system access to sterc_script when enabling usb nap
-    copy -u /system/etc/psdata/sterc_conf /data/misc/psdata/sterc_conf
-    copy -u /system/etc/psdata/sterc_script_connect /data/misc/psdata/sterc_script_connect
-    copy -u /system/etc/psdata/sterc_script_disconnect /data/misc/psdata/sterc_script_disconnect
-    copy -u /system/etc/psdata/sterc_conf_alt /data/misc/psdata/sterc_conf_alt
-    copy -u /system/etc/psdata/sterc_script_connect_alt /data/misc/psdata/sterc_script_connect_alt
-    copy -u /system/etc/psdata/sterc_script_connect_dun /data/misc/psdata/sterc_script_connect_dun
-    copy -u /system/etc/psdata/sterc_script_disconnect_dun /data/misc/psdata/sterc_script_disconnect_dun
-    chmod 0660 /data/misc/psdata/sterc_conf
-    chmod 0500 /data/misc/psdata/sterc_script_connect
-    chmod 0500 /data/misc/psdata/sterc_script_disconnect
-    chmod 0660 /data/misc/psdata/sterc_conf_alt
-    chmod 0500 /data/misc/psdata/sterc_script_connect_alt
-    chmod 0500 /data/misc/psdata/sterc_script_connect_dun
-    chmod 0500 /data/misc/psdata/sterc_script_disconnect_dun
-    chown root radio /data/misc/psdata/sterc_conf
-    chown root radio /data/misc/psdata/sterc_conf_alt
-
-    # give system access to stepscc_conf
-    copy -u /system/etc/psdata/stepscc_conf /data/misc/psdata/stepscc_conf
-    chmod 0660 /data/misc/psdata/stepscc_conf
-    chown root radio /data/misc/psdata/stepscc_conf
 
     # create var/run, var/lib for avahi
     mkdir /var
@@ -419,6 +391,11 @@ on boot
     chown bluetooth bluetooth ro.bt.bdaddr_path
     chown bluetooth bluetooth /system/etc/bt_addr
 
+    # Audio (Earjack)
+    chown system radio /sys/class/audio/earjack/select_jack
+    chown system radio /sys/class/audio/earjack/key_state
+    chown system radio /sys/class/audio/earjack/state
+    chown media system /sys/class/audio/earjack/reselect_jack
 
     # GPS
     chown root system /dev/ttyAMA1
@@ -454,8 +431,20 @@ on boot
     setprop debug.libcamera.trace 666
 
     # Battery
-    chown system system /sys/class/power_supply/battery/batt_vol_adc_cal
-    chown radio system /sys/class/power_supply/battery/fg_reset_soc
+    chown system radio /sys/class/power_supply/battery/fg_reset_soc
+    chown system radio /sys/class/power_supply/battery/batt_reset_soc
+    chown system radio /sys/class/power_supply/battery/factory_mode
+    chown system radio /sys/class/power_supply/battery/update
+    chown system radio /sys/class/power_supply/battery/2g_call
+    chown system radio /sys/class/power_supply/battery/3g_call
+    chown system radio /sys/class/power_supply/battery/data_call
+    chown system radio /sys/class/power_supply/battery/wifi
+    chown system radio /sys/class/power_supply/battery/lte
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/video
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/music
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/browser
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/hotspot
+    chown sdcard_rw sdcard_rw /sys/class/power_supply/battery/camera
 
     # Modem
     class_start modem
