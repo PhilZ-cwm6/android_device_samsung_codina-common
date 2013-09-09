@@ -55,6 +55,10 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/etc/omxloaders:system/etc/omxloaders \
     $(LOCAL_PATH)/configs/bin/usbid_init.sh:system/bin/usbid_init.sh
 
+# Vold
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/etc/vold.fstab:system/etc/vold.fstab
+
 # RIL
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/etc/AT/manuf_id.cfg:system/etc/AT/manuf_id.cfg \
