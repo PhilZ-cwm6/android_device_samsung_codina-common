@@ -24,6 +24,7 @@ $(call inherit-product, device/samsung/u8500-common/device_u8500-common.mk)
 # Recovery
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/recovery/prerecovery.rc:root/prerecovery.rc \
+    $(LOCAL_PATH)/recovery/recovery.rc:root/recovery.rc \
 
 # Ramdisk
 PRODUCT_COPY_FILES += \
