@@ -27,6 +27,7 @@ TARGET_USERIMAGES_USE_EXT4 := true
 
 # Kernel
 TARGET_KERNEL_SOURCE := kernel/samsung/codina-common
+# TARGET_KERNEL_SELINUX_CONFIG := codinaselinux_defconfig
 TARGET_USE_ST_ERICSSON_KERNEL := true
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
@@ -42,3 +43,17 @@ BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := true
 
 # Recovery
 TARGET_RECOVERY_INITRC := device/samsung/codina-common/recovery/init.rc
+TARGET_RECOVERY_FSTAB := device/samsung/codina-common/rootdir/fstab.samsungcodina
+RECOVERY_FSTAB_VERSION := 2
+
+# SELinux
+# BOARD_SEPOLICY_DIRS += \
+#        device/samsung/codina-common/sepolicy
+
+# BOARD_SEPOLICY_UNION += \
+#    device.te \
+#    domain.te \
+#    file.te \
+#    file_contexts \
+#    rild.te
+
