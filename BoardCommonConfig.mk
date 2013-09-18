@@ -30,6 +30,7 @@ TARGET_KERNEL_SOURCE := kernel/samsung/codina-common
 TARGET_USE_ST_ERICSSON_KERNEL := true
 BOARD_KERNEL_BASE := 0x00000000
 BOARD_KERNEL_PAGESIZE := 2048
+BOARD_KERNEL_CMDLINE := console=tty1 datapart=/dev/block/mmcblk0p25 apparmor=1 security=apparmor
 
 # Bluetooth
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/samsung/codina-common/bluetooth
