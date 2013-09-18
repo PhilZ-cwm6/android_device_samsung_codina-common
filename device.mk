@@ -27,7 +27,10 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/rootdir/lib/modules/param.ko:system/lib/modules/param.ko \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.rc:root/init.samsungcodina.rc \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.usb.rc:root/init.samsungcodina.usb.rc \
-    $(LOCAL_PATH)/rootdir/ueventd.samsungcodina.rc:root/ueventd.samsungcodina.rc
+    $(LOCAL_PATH)/rootdir/ueventd.samsungcodina.rc:root/ueventd.samsungcodina.rc \
+    $(LOCAL_PATH)/recovery/root/sbin/libkeyutils.so:recovery/root/sbin/libkeyutils.so \
+    $(LOCAL_PATH)/recovery/root/sbin/libsec_km.so:recovery/root/sbin/libsec_km.so \
+    $(LOCAL_PATH)/recovery/root/sbin/libsec_ecryptfs.so:recovery/root/sbin/libsec_ecryptfs.so
 
 # TouchScreen & Inputs
 PRODUCT_COPY_FILES += \
