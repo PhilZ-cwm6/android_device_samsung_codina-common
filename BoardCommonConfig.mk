@@ -47,9 +47,8 @@ BOARD_VOLD_DISC_HAS_MULTIPLE_MAJORS := true
 TARGET_RECOVERY_INITRC := device/samsung/codina-common/recovery/init.rc
 TARGET_PREBUILT_RECOVERY_KERNEL := device/samsung/codina-common/recovery/recovery_kernel
 
-# twrp stuffs
-# TODO recovery/twrp-graphics.c: please see the file for comments
-TW_BOARD_CUSTOM_GRAPHICS := ../../../device/samsung/codina-common/recovery/twrp-graphics.c
+# twrp stuff
+TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
 DEVICE_RESOLUTION := 480x800
 RECOVERY_SDCARD_ON_DATA := true
 TW_INTERNAL_STORAGE_PATH := "/data/media"
