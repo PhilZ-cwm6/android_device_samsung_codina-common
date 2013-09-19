@@ -7,7 +7,7 @@ on init
     export LD_LIBRARY_PATH .:/sbin
     export ANDROID_ROOT /system
     export ANDROID_DATA /data
-    export EXTERNAL_STORAGE /sdcard
+    export EXTERNAL_STORAGE /sdcard0
 
     symlink /system/etc /etc
 
@@ -17,7 +17,7 @@ on init
     mkdir /mnt
     mkdir /mnt/.lfs
     mkdir /preload
-    mkdir /sdcard
+    mkdir /sdcard0
     mkdir /external_sd
     mount /tmp /tmp tmpfs
 
