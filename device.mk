@@ -32,8 +32,7 @@ PRODUCT_COPY_FILES += \
 
 # TouchScreen & Inputs
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/usr/keylayout/gpio-keys.kl:system/usr/keylayout/gpio-keys.kl \
-    $(LOCAL_PATH)/configs/usr/keylayout/codina-kp.kl:system/usr/keylayout/codina-kp.kl
+    $(LOCAL_PATH)/configs/usr/keylayout/gpio-keys.kl:system/usr/keylayout/gpio-keys.kl
 
 
 # Camera
