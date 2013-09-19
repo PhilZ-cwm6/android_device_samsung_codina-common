@@ -22,15 +22,13 @@ $(call inherit-product, device/samsung/u8500-common/device_u8500-common.mk)
 
 # Ramdisk
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/rootdir/init.rc:root/init.rc \
     $(LOCAL_PATH)/rootdir/fstab.samsungcodina:root/fstab.samsungcodina \
     $(LOCAL_PATH)/rootdir/lib/modules/j4fs.ko:system/lib/modules/j4fs.ko \
     $(LOCAL_PATH)/rootdir/lib/modules/param.ko:system/lib/modules/param.ko \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.rc:root/init.samsungcodina.rc \
     $(LOCAL_PATH)/rootdir/init.samsungcodina.usb.rc:root/init.samsungcodina.usb.rc \
-    $(LOCAL_PATH)/rootdir/ueventd.samsungcodina.rc:root/ueventd.samsungcodina.rc \
-    $(LOCAL_PATH)/recovery/root/sbin/libkeyutils.so:recovery/root/sbin/libkeyutils.so \
-    $(LOCAL_PATH)/recovery/root/sbin/libsec_km.so:recovery/root/sbin/libsec_km.so \
-    $(LOCAL_PATH)/recovery/root/sbin/libsec_ecryptfs.so:recovery/root/sbin/libsec_ecryptfs.so
+    $(LOCAL_PATH)/rootdir/ueventd.samsungcodina.rc:root/ueventd.samsungcodina.rc
 
 # TouchScreen & Inputs
 PRODUCT_COPY_FILES += \
