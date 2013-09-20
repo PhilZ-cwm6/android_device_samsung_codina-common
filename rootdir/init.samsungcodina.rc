@@ -1,16 +1,21 @@
 import /init.samsungcodina.usb.rc
 
-on init
-
-    mkdir /mnt/shell/emulated 0700 shell shell
-    mkdir /storage 0550 system sdcard_r
-    mkdir /storage/emulated 0555 root root
-    mkdir /storage/sdcard1 0775 system system
+on early-init
 
     export EXTERNAL_STORAGE /storage/emulated/legacy
     export SECONDARY_STORAGE /storage/sdcard1
     export EMULATED_STORAGE_SOURCE /mnt/shell/emulated
     export EMULATED_STORAGE_TARGET /storage/emulated
+    mkdir /mnt/shell/emulated 0700 shell shell
+    mkdir /storage 0550 system sdcard_r
+    mkdir /storage/emulated 0555 root root
+    mkdir /storage/sdcard1 0775 system system
+
+    mkdir /efs 0771 radio system
+    mkdir /preload 0771 system system
+    mkdir /modemfs 0771 system system
+    mkdir /mnt 0755 root system
+    mkdir /mnt/.lfs 0755 root root
 
     # For backwards compatibility
     symlink /storage/emulated/legacy /sdcard
@@ -20,12 +25,15 @@ on init
     symlink /storage/sdcard1 /extSdCard
     symlink /storage/sdcard1 /mnt/extSdCard
 
+on init
+
+    # setup the global environment
+    export PATH /system/sbin:/system/bin:/system/xbin:/sbin:/bin:/vendor/bin
+    export LD_LIBRARY_PATH /system/lib:/lib:/usr/lib:/system/lib/ste_omxcomponents:/vendor/lib
     export OMX_STE_ENS_COMPONENTS_DIR /system/lib/ste_omxcomponents/
     export OMX_BELLAGIO_LOADER_REGISTRY /system/etc/omxloaders
+    export OMX_STE_CSCALL_COMPONENTS_DIR /system/lib/ste_omxcomponents/
 
-    mkdir /modemfs 0771 system system
-    mkdir /efs 0775 radio system
-    mkdir /preload 0771 system system
     # Shared memory file system
     mkdir /dev/shm 0700 root system
     mount tmpfs tmpfs /dev/shm mode=0755,gid=1000
@@ -35,9 +43,6 @@ on init
 
     # create /tmp directory needed by psccd and CSPSA
     mkdir /tmp
-
-    # J4FS(lfs) mount points.
-    mkdir /mnt/.lfs 0755 root root
 
     # mount debugfs in order for Audio ADM component to retrieve debug information
     mkdir /debug
@@ -290,13 +295,75 @@ on post-fs-data
     mkdir /data/misc/wifi/sockets 0770 wifi wifi
     mkdir /data/misc/dhcp 0775 dhcp dhcp
 
+    # give system access to ril_config
+    copy -u /system/etc/ril_config /data/misc/ril_config
+    chmod 0660 /data/misc/ril_config
+    chown root radio /data/misc/ril_config
+
     # give system access to wpa_supplicant.conf for backup and restore
     mkdir /data/misc/wifi 0770 wifi system
     chmod 0770 /data/misc/wifi
     chmod 0660 /data/misc/wifi/wpa_supplicant.conf
 
+    # After we setup wireless subsystem, let dnsmasq create files for soft ap
+    chown dhcp system /data/misc/dhcp
+#[ SEC_MM_DRM
+    # DRM directory creation
+    mkdir /system/etc/security/.drm 0775
+    chown root root /system/etc/security/.drm
+    chmod 0775 /system/etc/security/.drm
+
+    # Added for Playready DRM Support
+    mkdir /data/data/.drm 0775
+    chown drm system /data/data/.drm
+    chmod 0775 /data/data/.drm
+    mkdir /data/data/.drm/.playready 0775
+    chown drm system /data/data/.drm/.playready
+    chmod 0775 /data/data/.drm/.playready
+
+    # Added drm folder to copy drm plugins
+    mkdir /system/lib/drm 0775
+    chown root root /system/lib/drm
+    chmod 0775 /system/lib/drm
+
+    # DivX DRM
+    mkdir /efs/.files 0775
+    mkdir /efs/.files/.dx1 0775
+    mkdir /efs/.files/.dm33 0775
+    mkdir /efs/.files/.mp301 0775
+    chown media system /efs/.files/.dx1
+    chown media system /efs/.files/.dm33
+    chown media system /efs/.files/.mp301
+    chmod 0775 /efs/.files/.dx1
+    chmod 0775 /efs/.files/.dm33
+    chmod 0775 /efs/.files/.mp301
+#]
+
     # Create directory for STE OMX debug logs
     mkdir /data/ste-debug 0775 system system
+
+    # give system access to sterc_script when enabling usb nap
+    copy -u /system/etc/psdata/sterc_conf /data/misc/psdata/sterc_conf
+    copy -u /system/etc/psdata/sterc_script_connect /data/misc/psdata/sterc_script_connect
+    copy -u /system/etc/psdata/sterc_script_disconnect /data/misc/psdata/sterc_script_disconnect
+    copy -u /system/etc/psdata/sterc_conf_alt /data/misc/psdata/sterc_conf_alt
+    copy -u /system/etc/psdata/sterc_script_connect_alt /data/misc/psdata/sterc_script_connect_alt
+    copy -u /system/etc/psdata/sterc_script_connect_dun /data/misc/psdata/sterc_script_connect_dun
+    copy -u /system/etc/psdata/sterc_script_disconnect_dun /data/misc/psdata/sterc_script_disconnect_dun
+    chmod 0660 /data/misc/psdata/sterc_conf
+    chmod 0500 /data/misc/psdata/sterc_script_connect
+    chmod 0500 /data/misc/psdata/sterc_script_disconnect
+    chmod 0660 /data/misc/psdata/sterc_conf_alt
+    chmod 0500 /data/misc/psdata/sterc_script_connect_alt
+    chmod 0500 /data/misc/psdata/sterc_script_connect_dun
+    chmod 0500 /data/misc/psdata/sterc_script_disconnect_dun
+    chown root radio /data/misc/psdata/sterc_conf
+    chown root radio /data/misc/psdata/sterc_conf_alt
+
+    # give system access to stepscc_conf
+    copy -u /system/etc/psdata/stepscc_conf /data/misc/psdata/stepscc_conf
+    chmod 0660 /data/misc/psdata/stepscc_conf
+    chown root radio /data/misc/psdata/stepscc_conf
 
     # create var/run, var/lib for avahi
     mkdir /var
@@ -413,6 +480,9 @@ on boot
     rm /data/glonass_started
     rm /data/glonass_fcn
 
+# permissions for FMRadio of Broadcom
+    chmod 0777 /system/bin/btld
+
     # Permissions for LCD
     chown system system /sys/class/backlight/panel/brightness
     chown system radio /sys/class/lcd/panel/lcd_power
@@ -430,6 +500,21 @@ on boot
     # temp Torch workaround
     chmod 0222 /sys/class/sec/flash/enable
 
+ # Define TCP buffer sizes for various networks
+ #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
+ 
+    setprop net.tcp.buffersize.default 4096,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.lte     4096,87380,1220608,4096,16384,563200
+    setprop net.tcp.buffersize.umts    4096,87380,563200,4096,16384,110208
+    setprop net.tcp.buffersize.hspa    4096,87380,704512,4096,16384,110208
+    setprop net.tcp.buffersize.hsupa   4096,87380,704512,4096,16384,262144
+    setprop net.tcp.buffersize.hsdpa   4096,87380,704512,4096,16384,262144
+    setprop net.tcp.buffersize.hspap   4096,87380,1220608,4096,16384,393216
+    setprop net.tcp.buffersize.edge    4096,26280,35040,4096,16384,35040
+    setprop net.tcp.buffersize.gprs    4096,8760,11680,4096,8760,11680
+    setprop net.tcp.buffersize.evdo    4096,87380,563200,4096,16384,262144
+    setprop net.tcp.buffersize.evdo_b  4096,87380,704512,4096,16384,262144
+
     # camera debug
     setprop persist.debug.extcamera.level 777
     setprop persist.debug.mmiocamera.level 777
@@ -439,9 +524,13 @@ on boot
     chown system system /sys/class/power_supply/battery/batt_vol_adc_cal
     chown system radio /sys/class/power_supply/battery/fg_reset_soc
 
+    #Set property to change the decoder profile level to 4.1
+    setprop ste.video.decoder.h264.def.lev 4.1  
+
     # Modem
     class_start modem
     class_start default
+
 
 # create virtual SD card at /mnt/sdcard, based on the /data/media directory
 # daemon will drop to user/group system/media_rw after initializing
@@ -494,14 +583,28 @@ service atd /system/bin/at_core -mode normal -serial ttyAMA2
     user root
     group radio audio
 
+# TA Loader
+service ta_load /system/bin/ta_loader
+    user root
+    group radio
+
 # AT Distributor for factory test
 service at_distributor /system/bin/at_distributor
     user root
     group radio log
 
+service battery_params /system/xbin/battery_params
+    class main
+    oneshot
+
 service usbid_init /system/bin/usbid_init.sh
     class main
     oneshot
+
+service mobex-daemon /system/bin/npsmobex
+    class main
+    user system
+    group system radio inet sdcard_rw
 
 # We must to setup two different services for p2p and wpa supplicants on bcm4334
 service wpa_supplicant /system/bin/wpa_supplicant -Dnl80211 -iwlan0 -puse_p2p_group_interface=1 -e/data/misc/wifi/entropy.bin
